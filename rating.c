@@ -49,9 +49,7 @@ rating_action_rate_helper (DB_plugin_action_t *action, int ctx, int rating)
     } else if (ctx == DDB_ACTION_CTX_NOWPLAYING) {
         it = deadbeef->streamer_get_playing_track ();
         plt = deadbeef->plt_get_curr ();
-        if (plt) {
-            num = deadbeef->plt_getselcount (plt);
-        }
+        num = 1;
     }
     if (!it || !plt || num < 1) {
         goto out;
@@ -59,7 +57,7 @@ rating_action_rate_helper (DB_plugin_action_t *action, int ctx, int rating)
 
     int count = 0;
     while (it) {
-        if (deadbeef->pl_is_selected (it)) {
+        if (deadbeef->pl_is_selected (it) || ctx == DDB_ACTION_CTX_NOWPLAYING) {
             if (rating == -1) {
                 deadbeef->pl_delete_meta(it, "rating");
             } else {
