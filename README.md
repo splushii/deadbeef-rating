@@ -1,4 +1,4 @@
-# DeaDBeeF Rating plugin
+# DeaDBeeF Song Rating plugin
 
 A plugin enabling commands to rate track(s) by writing to the `%rating%` metadata tag. The commands are accessible from the context menu or by binding them to hotkeys. 
 
@@ -18,7 +18,13 @@ In order to show the rating tags in the playlist, add a new custom column with t
 
 `$ifequal([%rating%], 5, *****,)$ifequal([%rating%], 4, ****,)$ifequal([%rating%], 3, ***,)$ifequal([%rating%], 2, **,)$ifequal([%rating%], 1, *,)`
 
-If you want, you can replace `*` with your rating indicator of choice.
+If you want, you can replace `*` with your rating indicator of choice. For example with beautiful awesome stars:
+
+`$ifequal([%rating%], 5,★★★★★,)$ifequal([%rating%], 4,★★★★,)$ifequal([%rating%], 3,★★★,)$ifequal([%rating%], 2,★★,)$ifequal([%rating%], 1,★,)`
+
+Or combine them with empty stars:
+
+`$ifequal([%rating%], 5,★★★★★,)$ifequal([%rating%], 4,★★★★☆,)$ifequal([%rating%], 3,★★★☆☆,)$ifequal([%rating%], 2,★★☆☆☆,)$ifequal([%rating%], 1,★☆☆☆☆,)$ifequal([%rating%], 0,☆☆☆☆☆,)`
 
 # License
 
