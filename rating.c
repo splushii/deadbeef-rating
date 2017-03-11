@@ -33,6 +33,7 @@ rating_action_rate_helper(DB_plugin_action_t *action, int ctx, int rating)
     DB_playItem_t *it = NULL;
     ddb_playlist_t *plt = NULL;
     int num = 0;
+    int count = 0;
     if (ctx == DDB_ACTION_CTX_SELECTION) {
         plt = deadbeef->plt_get_curr();
         if (plt) {
@@ -50,13 +51,11 @@ rating_action_rate_helper(DB_plugin_action_t *action, int ctx, int rating)
         }
     } else if (ctx == DDB_ACTION_CTX_NOWPLAYING) {
         it = deadbeef->streamer_get_playing_track();
-        plt = deadbeef->plt_get_curr();
         num = 1;
     }
-    if (!it || !plt || num < 1) {
+    if (!it || num < 1) {
         goto out;
     }
-    int count = 0;
     while (it) {
         if (deadbeef->pl_is_selected(it) || ctx == DDB_ACTION_CTX_NOWPLAYING) {
             if (rating == -1) {
@@ -73,11 +72,6 @@ rating_action_rate_helper(DB_plugin_action_t *action, int ctx, int rating)
             int match = it && dec;
             deadbeef->pl_unlock();
             if (match) {
-                int is_subtrack = deadbeef->pl_get_item_flags(it)
-		    & DDB_IS_SUBTRACK;
-                if (is_subtrack) {
-                    continue;
-                }
                 DB_decoder_t *dec = NULL;
                 DB_decoder_t **decoders = deadbeef->plug_get_decoder_list();
                 for (int i = 0; decoders[i]; i++) {
@@ -90,8 +84,7 @@ rating_action_rate_helper(DB_plugin_action_t *action, int ctx, int rating)
                     }
                 }
             }
-            count++;
-            if (count >= num) {
+            if (++count >= num) {
                 break;
             }
         }
@@ -99,8 +92,9 @@ rating_action_rate_helper(DB_plugin_action_t *action, int ctx, int rating)
         deadbeef->pl_item_unref(it);
         it = next;
     }
-    if (plt) {
-        deadbeef->plt_modified(plt);
+    if (count) {
+	deadbeef->sendmessage(DB_EV_PLAYLISTCHANGED, 0,
+			      DDB_PLAYLIST_CHANGE_CONTENT, 0);
     }
 out:
     if (it) {
