@@ -93,8 +93,7 @@ rating_action_rate_helper(DB_plugin_action_t *action, int ctx, int rating)
         it = next;
     }
     if (count) {
-	deadbeef->sendmessage(DB_EV_PLAYLISTCHANGED, 0,
-			      DDB_PLAYLIST_CHANGE_CONTENT, 0);
+        deadbeef->sendmessage(DB_EV_PLAYLISTCHANGED, 0, DDB_PLAYLIST_CHANGE_CONTENT, 0);
     }
 out:
     if (it) {
@@ -146,7 +145,7 @@ rating_action_remove(DB_plugin_action_t *action, int ctx)
 }
 
 static DB_plugin_action_t remove_rating_action = {
-    .title = "Remove rating tag",
+    .title = "Song rating/Remove rating tag",
     .name = "rating_remove",
     .flags = DB_ACTION_SINGLE_TRACK | DB_ACTION_MULTIPLE_TRACKS
     | DB_ACTION_ADD_MENU,
@@ -155,7 +154,7 @@ static DB_plugin_action_t remove_rating_action = {
 };
 
 static DB_plugin_action_t rate5_action = {
-    .title = "Rate 5",
+    .title = "Song rating/5   ★★★★★",
     .name = "rating_rate5",
     .flags = DB_ACTION_SINGLE_TRACK | DB_ACTION_MULTIPLE_TRACKS
     | DB_ACTION_ADD_MENU,
@@ -164,7 +163,7 @@ static DB_plugin_action_t rate5_action = {
 };
 
 static DB_plugin_action_t rate4_action = {
-    .title = "Rate 4",
+    .title = "Song rating/4   ★★★★☆",
     .name = "rating_rate4",
     .flags = DB_ACTION_SINGLE_TRACK | DB_ACTION_MULTIPLE_TRACKS
     | DB_ACTION_ADD_MENU,
@@ -173,7 +172,7 @@ static DB_plugin_action_t rate4_action = {
 };
 
 static DB_plugin_action_t rate3_action = {
-    .title = "Rate 3",
+    .title = "Song rating/3   ★★★☆☆",
     .name = "rating_rate3",
     .flags = DB_ACTION_SINGLE_TRACK | DB_ACTION_MULTIPLE_TRACKS
     | DB_ACTION_ADD_MENU,
@@ -182,7 +181,7 @@ static DB_plugin_action_t rate3_action = {
 };
 
 static DB_plugin_action_t rate2_action = {
-    .title = "Rate 2",
+    .title = "Song rating/2   ★★☆☆☆",
     .name = "rating_rate2",
     .flags = DB_ACTION_SINGLE_TRACK | DB_ACTION_MULTIPLE_TRACKS
     | DB_ACTION_ADD_MENU,
@@ -191,7 +190,7 @@ static DB_plugin_action_t rate2_action = {
 };
 
 static DB_plugin_action_t rate1_action = {
-    .title = "Rate 1",
+    .title = "Song rating/1   ★☆☆☆☆",
     .name = "rating_rate1",
     .flags = DB_ACTION_SINGLE_TRACK | DB_ACTION_MULTIPLE_TRACKS
     | DB_ACTION_ADD_MENU,
@@ -200,7 +199,7 @@ static DB_plugin_action_t rate1_action = {
 };
 
 static DB_plugin_action_t rate0_action = {
-    .title = "Rate 0",
+    .title = "Song rating/0   ☆☆☆☆☆",
     .name = "rating_rate0",
     .flags = DB_ACTION_SINGLE_TRACK | DB_ACTION_MULTIPLE_TRACKS
     | DB_ACTION_ADD_MENU,
