@@ -26,79 +26,105 @@ rating_stop(void)
     return 0;
 }
 
+// Set the meta of the item and iterate all playlists for the same item and update it
+static void
+set_meta(const char *search_uri, int rating)
+{
+    // Playlist must be locked by the caller
+    for (int i = 0; ; ++i){
+        ddb_playlist_t *plt = deadbeef->plt_get_for_idx (i);
+        if (!plt) break;
+
+        DB_playItem_t *it = deadbeef->plt_get_first (plt, PL_MAIN);
+        while (it) {
+            DB_playItem_t *next = deadbeef->pl_get_next (it, PL_MAIN);
+            const char *uri = deadbeef->pl_find_meta (it, ":URI");
+            if (strcmp (uri, search_uri) == 0) {
+                if (rating == -1) {
+                    deadbeef->pl_delete_meta (it, "rating");
+                } else {
+                    deadbeef->pl_set_meta_int (it, "rating", rating);
+                }
+                deadbeef->plt_modified (plt);
+            }
+            deadbeef->pl_item_unref (it);
+            it = next;
+        }
+
+        deadbeef->plt_unref (plt);
+    }
+}
+
+// Write to file
+static void
+update_file(DB_playItem_t *it)
+{
+    const char *name = deadbeef->pl_find_meta_raw (it, ":DECODER");
+    if (!name) return;
+
+    char decoder_id[100];
+    strncpy (decoder_id, name, sizeof (decoder_id));
+
+    DB_decoder_t *dec = NULL;
+    DB_decoder_t **decoders = deadbeef->plug_get_decoder_list ();
+    for (int i = 0; decoders[i]; i++) {
+        if (!strcmp (decoders[i]->plugin.id, decoder_id)) {
+            dec = decoders[i];
+            if (dec->write_metadata) {
+                dec->write_metadata (it);
+            }
+            break;
+        }
+    }
+}
+
 // Removes rating tag when rating == -1, otherwise sets specified rating.
 static int
 rating_action_rate_helper(DB_plugin_action_t *action, int ctx, int rating)
 {
-    DB_playItem_t *it = NULL;
-    ddb_playlist_t *plt = NULL;
-    int num = 0;
-    int count = 0;
+    ddb_playlist_t *plt = deadbeef->plt_get_curr ();
+    if (!plt) {
+        return 0;
+    }
+
+    deadbeef->pl_lock();
     if (ctx == DDB_ACTION_CTX_SELECTION) {
-        plt = deadbeef->plt_get_curr();
-        if (plt) {
-            num = deadbeef->plt_getselcount(plt);
-            it = deadbeef->plt_get_first(plt, PL_MAIN);
-            while (it) {
-                if (deadbeef->pl_is_selected(it)) {
-                    break;
+        DB_playItem_t *it = deadbeef->plt_get_first (plt, PL_MAIN);
+        while (it) {
+            DB_playItem_t *next = deadbeef->pl_get_next (it, PL_MAIN);
+            const char *uri = deadbeef->pl_find_meta (it, ":URI");
+            if (deadbeef->pl_is_selected (it) && deadbeef->is_local_file (uri)) {
+                int old_rating = deadbeef->pl_find_meta_int (it, "rating", -1);
+
+                if (old_rating != rating) {
+                    set_meta (uri, rating);
+                    update_file (it);
                 }
-                DB_playItem_t *next = deadbeef->pl_get_next(it, PL_MAIN);
-                deadbeef->pl_item_unref(it);
-                it = next;
-            }
-            deadbeef->plt_unref(plt);
+             }
+            deadbeef->pl_item_unref (it);
+            it = next;
         }
-    } else if (ctx == DDB_ACTION_CTX_NOWPLAYING) {
-        it = deadbeef->streamer_get_playing_track();
-        num = 1;
     }
-    if (!it || num < 1) {
-        goto out;
-    }
-    while (it) {
-        if (deadbeef->pl_is_selected(it) || ctx == DDB_ACTION_CTX_NOWPLAYING) {
-            if (rating == -1) {
-                deadbeef->pl_delete_meta(it, "rating");
-            } else {
-                deadbeef->pl_set_meta_int(it, "rating", rating);
-            }
-            deadbeef->pl_lock();
-            const char *dec = deadbeef->pl_find_meta_raw(it, ":DECODER");
-            char decoder_id[100];
-            if (dec) {
-                strncpy(decoder_id, dec, sizeof(decoder_id));
-            }
-            int match = it && dec;
-            deadbeef->pl_unlock();
-            if (match) {
-                DB_decoder_t *dec = NULL;
-                DB_decoder_t **decoders = deadbeef->plug_get_decoder_list();
-                for (int i = 0; decoders[i]; i++) {
-                    if (!strcmp(decoders[i]->plugin.id, decoder_id)) {
-                        dec = decoders[i];
-                        if (dec->write_metadata) {
-                            dec->write_metadata(it);
-                        }
-                        break;
-                    }
+    else if (ctx == DDB_ACTION_CTX_NOWPLAYING) {
+        DB_playItem_t *it = deadbeef->streamer_get_playing_track ();
+        if (it) {
+            const char *uri = deadbeef->pl_find_meta (it, ":URI");
+            if (deadbeef->is_local_file (uri)) {
+                int old_rating = deadbeef->pl_find_meta_int (it, "rating", -1);
+
+                if (old_rating != rating) {
+                    set_meta (uri, rating);
+                    update_file (it);
                 }
-            }
-            if (++count >= num) {
-                break;
-            }
+             }
+            deadbeef->pl_item_unref (it);
         }
-        DB_playItem_t *next = deadbeef->pl_get_next(it, PL_MAIN);
-        deadbeef->pl_item_unref(it);
-        it = next;
     }
-    if (count) {
-        deadbeef->sendmessage(DB_EV_PLAYLISTCHANGED, 0, DDB_PLAYLIST_CHANGE_CONTENT, 0);
-    }
-out:
-    if (it) {
-        deadbeef->pl_item_unref(it);
-    }
+
+    deadbeef->pl_unlock ();
+    deadbeef->sendmessage (DB_EV_PLAYLISTCHANGED, 0, DDB_PLAYLIST_CHANGE_CONTENT, 0);
+    deadbeef->pl_save_all (); // save all changed playlists
+
     return 0;
 }
 
